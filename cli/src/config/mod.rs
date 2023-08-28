@@ -5,14 +5,17 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use serde::{Deserialize, Serialize};
 use url::{ParseError, Url};
+use validator::{Validate};
 
 use crate::{APP_CONFIG, DISPLAY};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Validate)]
 pub struct Config {
     #[serde(rename = "orkaUrl")]
+    #[validate(url)]
     pub orka_url: String,
     #[serde(rename = "orkaPort", default = "Config::get_default_port")]
+    #[validate(range(min = 0, max = 65535))]
     pub orka_port: u16,
 }
 
@@ -45,6 +48,14 @@ impl Config {
 
     /// Save the current configuration to disk
     pub fn save(&self) {
+        match self.validate() {
+            Ok(_) => {},
+            Err(e) => {
+                DISPLAY.print_error(&format!("Error validating configuration: {}", e));
+                exit(-1)
+            }
+        }
+
         let file_location = Config::get_config_path();
         match serde_yaml::to_string(self) {
             Err(_) => DISPLAY.print_error("Failed to save config !"),
@@ -96,7 +107,7 @@ impl Config {
         url.set_port(Some(new_port)).map_err(|_| ParseError::EmptyHost)?;
         Ok(url.into())
     }
-    
+
     pub fn get_url_and_port(new_url: &str, new_port: u16) -> String {
         match Self::add_port_to_url(new_url, new_port) {
             Ok(url) => url,
@@ -106,7 +117,7 @@ impl Config {
             }
         }
     }
-    
+
 
     /// Wrap the config struct into an Arc<Mutex>>
     pub fn new_wrapped() -> Arc<Mutex<Config>> {
