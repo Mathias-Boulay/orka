@@ -4,7 +4,7 @@ use std::process::exit;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use serde::{Deserialize, Serialize};
-use url::Url;
+use url::{ParseError, Url};
 
 use crate::{APP_CONFIG, DISPLAY};
 
@@ -91,11 +91,22 @@ impl Config {
     /// Adds our port to the user given url
     ///
     /// Transform the given URL with the given port
-    fn add_port_to_url(new_url: &str, new_port: u16) -> Result<String, url::ParseError> {
+    fn add_port_to_url(new_url: &str, new_port: u16) -> Result<String, ParseError> {
         let mut url = Url::parse(new_url)?;
-        url.set_port(Some(new_port)).map_err(|_| url::ParseError::EmptyHost)?;
+        url.set_port(Some(new_port)).map_err(|_| ParseError::EmptyHost)?;
         Ok(url.into())
     }
+    
+    pub fn get_url_and_port(new_url: &str, new_port: u16) -> String {
+        match Self::add_port_to_url(new_url, new_port) {
+            Ok(url) => url,
+            Err(e) => {
+                DISPLAY.print_error(&format!("Error parsing URL and port: {}", e));
+                exit(-1)
+            }
+        }
+    }
+    
 
     /// Wrap the config struct into an Arc<Mutex>>
     pub fn new_wrapped() -> Arc<Mutex<Config>> {

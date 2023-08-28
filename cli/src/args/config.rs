@@ -35,4 +35,5 @@ pub struct SetConfig {
 #[derive(Debug, Clone, clap::ValueEnum)]
 pub enum ConfigResource {
     ApiFqdn,
+    ApiPort,
 }
