@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - cli/**
+      - .github/workflows/cli.yaml
 
 env:
   CARGO_TERM_COLOR: always
