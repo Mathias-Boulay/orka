@@ -11,8 +11,9 @@ use crate::{
         },
         OrkaCtlArgs,
     },
-    APP_CONFIG, DISPLAY,
+    DISPLAY,
 };
+use crate::config::Config;
 
 pub struct Handler {
     client: reqwest::Client,
@@ -26,7 +27,7 @@ impl Handler {
     }
 
     pub fn get_config_value(&self, args: GetConfig) {
-        let config = APP_CONFIG.lock().unwrap();
+        let config = Config::get_config_lock();
         let value: &str = match args.resource {
             ApiFqdn => &config.orka_url
         };
@@ -176,6 +177,6 @@ impl Handler {
 
     fn get_url(endpoint: &str) -> String {
         //return APP_CONFIG.orka_url.clone() + endpoint;
-        format!("{}{}", &APP_CONFIG.lock().unwrap().orka_url, endpoint)
+        format!("{}{}", Config::get_config_lock().orka_url, endpoint)
     }
 }

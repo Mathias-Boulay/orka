@@ -1,12 +1,12 @@
 use std::fs;
 use std::path::PathBuf;
 use std::process::exit;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-use crate::DISPLAY;
+use crate::{APP_CONFIG, DISPLAY};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
@@ -125,4 +125,16 @@ impl Config {
             }
         }
     }
+
+    /// Get a locked MutexGuard from the config struct
+    pub fn get_config_lock<'a>() -> MutexGuard<'a, Self> {
+        match APP_CONFIG.lock() {
+            Ok(config) => config,
+            Err(_) => {
+                DISPLAY.print_error("Cannot lock the config !");
+                exit(-1);
+            }
+        }
+    }
+
 }
