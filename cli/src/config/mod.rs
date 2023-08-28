@@ -29,7 +29,7 @@ impl Config {
         let file = match fs::File::open(config_file_location) {
             Ok(file) => file,
             Err(e) => {
-                println!("{}", e);
+                DISPLAY.print_error(&format!("Error reading configuration file: {}", e));
                 exit(-1);
             }
         };
@@ -37,7 +37,7 @@ impl Config {
         match serde_yaml::from_reader(file) {
             Ok(conf) => conf,
             Err(e) => {
-                println!("Error parsing configuration file: {}", e);
+                DISPLAY.print_error(&format!("Error parsing configuration file: {}", e));
                 exit(-1)
             }
         }
@@ -65,7 +65,7 @@ impl Config {
         match fs::create_dir_all(file_location.parent().unwrap()) {
             Ok(_) => (),
             Err(e) => {
-                println!("{}", e);
+                DISPLAY.print_error(&format!("Error creating configuration file structure: {}", e));
                 exit(-1);
             }
         }
@@ -73,7 +73,7 @@ impl Config {
         match fs::write(file_location, "orkaUrl: http://localhost\norkaPort: 3000\n") {
             Ok(_) => (),
             Err(e) => {
-                println!("{}", e);
+                DISPLAY.print_error(&format!("Error creating configuration file: {}", e));
                 exit(-1);
             }
         }
