@@ -1,10 +1,11 @@
+use std::process::exit;
 use reqwest::Response;
 use serde::de::DeserializeOwned;
 use crate::workloads::file::read_file;
 
 use crate::{
     args::{
-        config::{ConfigResource::ApiFqdn, GetConfig, SetConfig},
+        config::{ConfigResource::ApiFqdn,ConfigResource::ApiPort, GetConfig, SetConfig},
         crud::{
             CreateInstance, CreateWorkload, DeleteInstance, DeleteWorkload, GetInstance,
             GetWorkload,
@@ -28,13 +29,31 @@ impl Handler {
 
     pub fn get_config_value(&self, args: GetConfig) {
         let config = Config::get_config_lock();
-        let value: &str = match args.resource {
-            ApiFqdn => &config.orka_url
+        let value: String = match args.resource {
+            ApiFqdn => config.orka_url.clone(),
+            ApiPort => config.orka_port.clone().to_string(),
         };
-        DISPLAY.print_log(value);
+        DISPLAY.print_log(&value);
     }
 
-    pub fn set_config_value(&self, args: SetConfig) {}
+    pub fn set_config_value(&self, args: SetConfig) {
+        let mut config = Config::get_config_lock();
+        match args.resource {
+            ApiFqdn => config.set_orka_url(&args.value),
+            ApiPort => {
+                let port: u16 = match args.value.parse::<u16>() {
+                    Ok(port)=> port,
+                    Err(e)=> {
+                        DISPLAY.print_error(&format!("Error parsing port: {}", e));
+                        exit(-1)
+                    }
+                };
+
+                config.set_orka_port(port);
+            },
+        };
+        config.save()
+    }
 
     pub async fn create_workload(&self, args: CreateWorkload) {
         match read_file(args.file_path) {
@@ -153,13 +172,14 @@ impl Handler {
                     Ok(json) => return Some(json),
                 }
             }
-        }
+        };
 
-        return None;
+        None
     }
 
     fn get_url(endpoint: &str) -> String {
-        //return APP_CONFIG.orka_url.clone() + endpoint;
-        format!("{}{}", Config::get_config_lock().orka_url, endpoint)
+        let config = Config::get_config_lock();
+        let url_with_port = Config::get_url_and_port(&config.orka_url, config.orka_port);
+        format!("{}{}", url_with_port, endpoint)
     }
 }
