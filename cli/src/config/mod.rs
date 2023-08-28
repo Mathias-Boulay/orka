@@ -16,6 +16,8 @@ pub struct Config {
 
 impl Config {
     /// Initialise the configuration
+    ///
+    /// Reads file from disk or create it from the default config function
     fn new() -> Self {
         let config_file_location = Config::get_config_path();
         if !config_file_location.exists() {
@@ -66,6 +68,8 @@ impl Config {
     }
 
     /// Generate the default configuration
+    ///
+    /// Create the directory structure and writes the default configuration in the orka config file
     fn generate_default_config() {
         let file_location = Config::get_config_path();
         match fs::create_dir_all(file_location.parent().unwrap()) {
@@ -86,6 +90,8 @@ impl Config {
     }
 
     /// Gather the config path
+    ///
+    /// Generates it from the user' home
     fn get_config_path() -> PathBuf {
         // FIXME let's hope the home env is defined
         let home = home::home_dir().unwrap();
@@ -107,6 +113,7 @@ impl Config {
         Arc::new(Mutex::new(config))
     }
 
+    /// Change the orka_url parameter to the given input
     pub fn set_orka_url(&mut self, new_url: &str) {
         match Config::add_port_to_url(new_url, 3000) {
             Ok(new_url) => {
