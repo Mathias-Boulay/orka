@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
-use crate::workloads::file::{Kind, remove_duplicates_array};
-use validator::{Validate, ValidationError};
+use crate::workloads::file::{remove_duplicates_array};
+use validator::{Validate};
 
 #[derive(Serialize, Deserialize, Debug)]
 enum Registry {
@@ -16,16 +16,9 @@ impl Registry {
 
 
 #[derive(Serialize, Deserialize, Validate)]
-pub struct WorkloadContainerFile {
+pub struct Container {
     #[validate(length(min = 1))]
-    version: String,
-    workload: Container
-}
-
-
-#[derive(Serialize, Deserialize, Validate)]
-struct Container {
-    kind: Kind,
+    #[serde(deserialize_with="u32_to_string")]
     port: String,
     #[validate(length(min = 1))]
     name: String,
@@ -37,4 +30,14 @@ struct Container {
     registry: Registry,
     #[validate(length(min = 1))]
     image: String
+}
+
+
+pub fn u32_to_string<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    // Deserialize u32, then convert it to String
+    let value: u32 = Deserialize::deserialize(deserializer)?;
+    Ok(value.to_string())
 }

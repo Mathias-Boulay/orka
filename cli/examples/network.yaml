@@ -5,7 +5,7 @@ workload:
     allowService:               # Limit which services can connect to the network
         - "workload_name"
     egress:
-        - 10.0.0s.0:
+        - 10.0.0.0:
             mask: 32
             ports: 
                 - "80-90"       # A range of ports, 80 to 90 included

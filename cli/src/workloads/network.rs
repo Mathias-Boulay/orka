@@ -1,19 +1,12 @@
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
-use crate::workloads::file::{Kind, CustomError, remove_duplicates_array};
+use crate::workloads::file::{CustomError, remove_duplicates_array};
 use regex::Regex;
 use validator::{Validate};
-
-#[derive(Serialize, Deserialize)]
-pub struct WorkloadNetworkFile {
-    version: String,
-    pub workload: Network
-}
 
 
 #[derive(Serialize, Deserialize)]
 pub struct Network {
-    kind: Kind,
     name: String,
     #[serde(rename = "allowService", deserialize_with="remove_duplicates_array")]
     allowservice: Vec<String>,
@@ -25,7 +18,7 @@ pub struct Network {
 
 
 
-#[derive(Validate, Serialize, Deserialize, Debug)]
+#[derive(Validate, Serialize, Deserialize)]
 pub struct IpAdress {
     #[validate(range(min = 0, max = 32))]
     #[serde(default = "max_mask")]

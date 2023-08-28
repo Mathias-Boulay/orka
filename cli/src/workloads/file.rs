@@ -1,30 +1,10 @@
 use serde::{Serialize, Deserialize, Deserializer};
 use std::fs;
-use crate::workloads::container::{WorkloadContainerFile};
-use crate::workloads::network::{WorkloadNetworkFile, verify_network};
+use crate::workloads::container::{Container};
+use crate::workloads::network::{Network, verify_network};
 use thiserror::Error;
 use std::io::ErrorKind::NotFound;
 use std::path::PathBuf;
-
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
-pub enum Kind {
-    #[serde(rename(deserialize = "container", serialize = "Container"))]
-    Container,
-    #[serde(rename(deserialize = "network", serialize = "Network"))]
-    Network,
-}
-
-
-#[derive(Serialize, Deserialize, Debug)]
-struct TestFile {
-    workload: TestKind
-}
-
-
-#[derive(Serialize, Deserialize, Debug)]
-struct TestKind {
-    kind: Kind
-}
 
 #[derive(Error, Debug)]
 pub enum CustomError {
@@ -34,12 +14,26 @@ pub enum CustomError {
     FileNotFound(PathBuf),
     #[error("Data could not be read from file")]
     FileCouldNotBeenRead,
-    #[error("`{0}`")]
-    MissingFields(String),
     #[error("The ip adress `{0}` is invalid.")]
     InvalidIpAddress(String),
     #[error("The port `{0}` is outside of the allowed port range.")]
     OutsidePortRange(u32),
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(tag = "kind")]
+pub enum ConfigVariant {
+    #[serde(rename(deserialize = "container", serialize = "Container"))]
+    Container(Container),
+
+    #[serde(rename(deserialize = "network", serialize = "Network"))]
+    Network(Network),
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct Workload {
+    version: String,
+    workload: ConfigVariant
 }
 
 
@@ -67,50 +61,30 @@ pub fn read_file(filepath : PathBuf) -> Result<serde_json::Value, CustomError> {
     };
 
     // convert file to yaml => take only the kind to know what type of Container we are reading
-    let yaml: TestFile = match serde_yaml::from_str::<TestFile>(&contents) {
+    let yaml: Workload = match serde_yaml::from_str::<Workload>(&contents) {
         Ok(result) => result,
-        Err(_) => return Err(CustomError::UnknownWorkloadKind),
+        Err(err) =>  {
+            println!("{}", err);
+            return Err(CustomError::UnknownWorkloadKind);
+        }
     };
 
-
-
     // check type of workload
-    match yaml.workload.kind {
-        Kind::Network => {
-            // read file into corresponding struct
-            let network : WorkloadNetworkFile = match serde_yaml::from_str(&contents) {
-                Ok(result) => result,
-                Err(error) => return Err(CustomError::MissingFields(error.to_string())),
-            };
-
+    match yaml.workload {
+        ConfigVariant::Network(ref network) => {
             // verify fields
-            match verify_network(&network.workload.egress) {
+            match verify_network(&network.egress) {
                 None => (),
                 Some(error) => return Err(error),
             };
-            match verify_network(&network.workload.ingress){
+            match verify_network(&network.ingress) {
                 None => (),
                 Some(error) => return Err(error),
             };
-
-            // read verified yaml structure to json
-            let networkstring : String = serde_yaml::to_string(&network).unwrap();
-            // return json
-            let json : serde_json::Value = serde_yaml::from_str(&networkstring).unwrap();            
-            return Ok(json);
-        },
-        Kind::Container => {
-            // read file into corresponding struct
-            let container : WorkloadContainerFile = match serde_yaml::from_str(&contents) {
-                Ok(result) => result,
-                Err(error) => return Err(CustomError::MissingFields(error.to_string())),
-            };
-
-            // read verified yaml structure to json
-            let containerstring : String = serde_yaml::to_string(&container).unwrap();
-            let json : serde_json::Value = serde_yaml::from_str(&containerstring).unwrap();
-            // return json
-            return Ok(json);
-        },
+        }
+        _ => {}
     }
+    let containerstring : String = serde_yaml::to_string(&yaml).unwrap();
+    let json : serde_json::Value = serde_yaml::from_str(&containerstring).unwrap();
+    return Ok(json)
 }
