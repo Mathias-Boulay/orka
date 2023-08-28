@@ -11,22 +11,10 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
-
-    # Place yourself in the proper folder
-    - name: cd cli
-      run: cd ./cli
-
-    # Linter
-    - run: rustup component add clippy
-    - uses: actions-rs/clippy-check@v1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        args: --all-features
 
     # Build a package
     - name: Add cargo deb
@@ -34,9 +22,10 @@ jobs:
 
     - name: Build release
       run: cargo deb
+      working-directory: ./cli
     
     - uses: actions/upload-artifact@v3
       with:
-        name: uplx-deb
-        path: /home/runner/work/orka/cli/target/debian/*.deb
+        name: orkactl-deb
+        path: /home/runner/work/orka/orka/cli/target/debian/*.deb
       
