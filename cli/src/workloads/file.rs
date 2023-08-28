@@ -8,12 +8,12 @@ use std::path::PathBuf;
 
 #[derive(Error, Debug)]
 pub enum CustomError {
-    #[error("Workload kind must be 'container' or 'network'.")]
-    UnknownWorkloadKind,
+    #[error("Error in file.")]
+    FileContentError(String),
     #[error("File `{0}` not found")]
     FileNotFound(PathBuf),
     #[error("Data could not be read from file")]
-    FileCouldNotBeenRead,
+    FileCouldNotBeRead,
     #[error("The ip adress `{0}` is invalid.")]
     InvalidIpAddress(String),
     #[error("The port `{0}` is outside of the allowed port range.")]
@@ -22,7 +22,7 @@ pub enum CustomError {
 
 #[derive(Deserialize, Serialize)]
 #[serde(tag = "kind")]
-pub enum ConfigVariant {
+pub enum WorkloadKind {
     #[serde(rename(deserialize = "container", serialize = "Container"))]
     Container(Container),
 
@@ -33,10 +33,11 @@ pub enum ConfigVariant {
 #[derive(Deserialize, Serialize)]
 pub struct Workload {
     version: String,
-    workload: ConfigVariant
+    workload: WorkloadKind
 }
 
 
+// remove any possible duplicates from an array
 pub fn remove_duplicates_array<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
 where
     D: Deserializer<'de>,
@@ -47,7 +48,9 @@ where
     return Ok(vec);
 }
 
-// return result
+// - reads a given workload file 
+// - verifies the fields
+// - returns the workload
 pub fn read_file(filepath : PathBuf) -> Result<serde_json::Value, CustomError> {
     // read file
     let contents = match fs::read_to_string(&filepath) {
@@ -55,23 +58,20 @@ pub fn read_file(filepath : PathBuf) -> Result<serde_json::Value, CustomError> {
         Err(error) =>  {
             match error.kind() {
                 NotFound => return Err(CustomError::FileNotFound(filepath)),
-                _ => return Err(CustomError::FileCouldNotBeenRead)
+                _ => return Err(CustomError::FileCouldNotBeRead)
             }
         }
     };
 
-    // convert file to yaml => take only the kind to know what type of Container we are reading
+    // convert file to yaml
     let yaml: Workload = match serde_yaml::from_str::<Workload>(&contents) {
         Ok(result) => result,
-        Err(err) =>  {
-            println!("{}", err);
-            return Err(CustomError::UnknownWorkloadKind);
-        }
+        Err(err) => return Err(CustomError::FileContentError(err.to_string())),
     };
 
     // check type of workload
     match yaml.workload {
-        ConfigVariant::Network(ref network) => {
+        WorkloadKind::Network(ref network) => {
             // verify fields
             match verify_network(&network.egress) {
                 None => (),
