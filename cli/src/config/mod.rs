@@ -12,6 +12,8 @@ use crate::{APP_CONFIG, DISPLAY};
 pub struct Config {
     #[serde(rename = "orkaUrl")]
     pub orka_url: String,
+    #[serde(rename = "orkaPort", default = "Config::get_default_port")]
+    pub orka_port: u16,
 }
 
 impl Config {
@@ -33,19 +35,7 @@ impl Config {
         };
 
         match serde_yaml::from_reader(file) {
-            Ok(conf) => {
-                let mut final_conf: Config = conf;
-                match Config::add_port_to_url(&final_conf.orka_url, 3000) {
-                    Ok(new_url) => {
-                        final_conf.orka_url = new_url;
-                        final_conf
-                    }
-                    Err(err) => {
-                        println!("Error: {}", err);
-                        exit(-1)
-                    }
-                }
-            }
+            Ok(conf) => conf,
             Err(e) => {
                 println!("Error parsing configuration file: {}", e);
                 exit(-1)
@@ -80,7 +70,7 @@ impl Config {
             }
         }
 
-        match fs::write(file_location, "orkaUrl: http://localhost\n") {
+        match fs::write(file_location, "orkaUrl: http://localhost\norkaPort: 3000\n") {
             Ok(_) => (),
             Err(e) => {
                 println!("{}", e);
@@ -101,9 +91,9 @@ impl Config {
     /// Adds our port to the user given url
     ///
     /// Transform the given URL with the given port
-    fn add_port_to_url(input_url: &str, port: u16) -> Result<String, url::ParseError> {
-        let mut url = Url::parse(input_url)?;
-        url.set_port(Some(port)).map_err(|_| url::ParseError::EmptyHost)?;
+    fn add_port_to_url(new_url: &str, new_port: u16) -> Result<String, url::ParseError> {
+        let mut url = Url::parse(new_url)?;
+        url.set_port(Some(new_port)).map_err(|_| url::ParseError::EmptyHost)?;
         Ok(url.into())
     }
 
@@ -115,15 +105,11 @@ impl Config {
 
     /// Change the orka_url parameter to the given input
     pub fn set_orka_url(&mut self, new_url: &str) {
-        match Config::add_port_to_url(new_url, 3000) {
-            Ok(new_url) => {
-                self.orka_url = new_url;
-            }
-            Err(err) => {
-                println!("Error: {}", err);
-                exit(-1)
-            }
-        }
+        self.orka_url = new_url.to_string();
+    }
+
+    pub fn set_orka_port(&mut self, new_port: u16) {
+        self.orka_port = new_port;
     }
 
     /// Get a locked MutexGuard from the config struct
@@ -137,4 +123,7 @@ impl Config {
         }
     }
 
+    fn get_default_port() -> u16 {
+        3000
+    }
 }
