@@ -10,6 +10,7 @@ enum Registry {
     Docker,
 }
 
+// default registry
 impl Registry {
     fn default() -> Self { Registry::Docker }
 }
@@ -33,6 +34,7 @@ pub struct Container {
 }
 
 
+// transform port from u32 to string
 pub fn u32_to_string<'de, D>(deserializer: D) -> Result<String, D::Error>
 where
     D: serde::Deserializer<'de>,

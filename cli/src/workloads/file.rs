@@ -20,6 +20,7 @@ pub enum CustomError {
     OutsidePortRange(u32),
 }
 
+// automatically assign workload type (Container / Network) based on the defined kind
 #[derive(Deserialize, Serialize)]
 #[serde(tag = "kind")]
 pub enum WorkloadKind {
@@ -84,6 +85,7 @@ pub fn read_file(filepath : PathBuf) -> Result<serde_json::Value, CustomError> {
         }
         _ => {}
     }
+    // convert yaml to json and return it
     let containerstring : String = serde_yaml::to_string(&yaml).unwrap();
     let json : serde_json::Value = serde_yaml::from_str(&containerstring).unwrap();
     return Ok(json)
