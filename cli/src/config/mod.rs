@@ -4,6 +4,7 @@ use std::process::exit;
 use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
+use url::Url;
 
 use crate::DISPLAY;
 
@@ -29,20 +30,28 @@ impl Config {
             }
         };
 
-        let config: Config = match serde_yaml::from_reader(file) {
+        match serde_yaml::from_reader(file) {
             Ok(conf) => {
                 let mut final_conf: Config = conf;
-                final_conf.orka_url = final_conf.orka_url + ":3000/";
-                return final_conf;
-            },
+                match Config::add_port_to_url(&final_conf.orka_url, 3000) {
+                    Ok(new_url) => {
+                        final_conf.orka_url = new_url;
+                        final_conf
+                    }
+                    Err(err) => {
+                        println!("Error: {}", err);
+                        exit(-1)
+                    }
+                }
+            }
             Err(e) => {
                 println!("Error parsing configuration file: {}", e);
                 exit(-1)
             }
-        };
+        }
     }
 
-    /// Save the current configuration
+    /// Save the current configuration to disk
     pub fn save(&self) {
         let file_location = Config::get_config_path();
         match serde_yaml::to_string(self) {
@@ -83,12 +92,30 @@ impl Config {
         home.join(".config").join("orka").join("config.yaml")
     }
 
+    /// Adds our port to the user given url
+    ///
+    /// Transform the given URL with the given port
+    fn add_port_to_url(input_url: &str, port: u16) -> Result<String, url::ParseError> {
+        let mut url = Url::parse(input_url)?;
+        url.set_port(Some(port)).map_err(|_| url::ParseError::EmptyHost)?;
+        Ok(url.into())
+    }
+
+    /// Wrap the config struct into an Arc<Mutex>>
     pub fn new_wrapped() -> Arc<Mutex<Config>> {
         let config = Config::new();
         Arc::new(Mutex::new(config))
     }
 
     pub fn set_orka_url(&mut self, new_url: &str) {
-        self.orka_url = new_url.to_string();
+        match Config::add_port_to_url(new_url, 3000) {
+            Ok(new_url) => {
+                self.orka_url = new_url;
+            }
+            Err(err) => {
+                println!("Error: {}", err);
+                exit(-1)
+            }
+        }
     }
 }
