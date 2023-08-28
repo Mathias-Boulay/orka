@@ -1,0 +1,41 @@
+name: Build CLI
+
+on:
+  push:
+    paths:
+      - cli/**
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    # Place yourself in the proper folder
+    - name: cd cli
+      run: cd ./cli
+
+    # Linter
+    - run: rustup component add clippy
+    - uses: actions-rs/clippy-check@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        args: --all-features
+
+    # Build a package
+    - name: Add cargo deb
+      run: cargo install cargo-deb
+
+    - name: Build release
+      run: cargo deb
+    
+    - uses: actions/upload-artifact@v3
+      with:
+        name: uplx-deb
+        path: /home/runner/work/orka/cli/target/debian/*.deb
+      
