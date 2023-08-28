@@ -2,6 +2,8 @@
 name = "cli"
 version = "0.1.0"
 edition = "2021"
+authors = ["Muriel Paraire", "Rémi Espié", "Mathias Boulay"]
+description = "Easy to use client to contact the orka controller"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -19,3 +21,13 @@ thiserror = "1.0.47"
 validator = { version = "0.12", features = ["derive"] }
 tokio = { version = "1.32.0", features = ["macros", "rt-multi-thread"] }
 url = "2.4.0"
+
+
+[package.metadata.deb]
+name = "orkactl"
+
+
+license-file = ["../LICENSE", "0"]
+extended-description = "Easy to use client to contact the orka controller"
+depends = "$auto"
+section = "utility"
