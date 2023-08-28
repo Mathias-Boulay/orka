@@ -5,6 +5,7 @@ use regex::Regex;
 use validator::{Validate};
 
 
+// struct for the workload of type network
 #[derive(Serialize, Deserialize)]
 pub struct Network {
     name: String,
@@ -17,7 +18,6 @@ pub struct Network {
 }
 
 
-
 #[derive(Validate, Serialize, Deserialize)]
 pub struct IpAdress {
     #[validate(range(min = 0, max = 32))]
@@ -27,12 +27,13 @@ pub struct IpAdress {
     ports: Vec<String>
 }
 
+// create default mask
 fn max_mask() -> u32{
     return 32;
 }
 
 
-
+// verify network (valid ip address, valid port)
 pub fn verify_network(networks: &Vec<HashMap<String, IpAdress>>) -> Option<CustomError> {
     let re = Regex::new(r"^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$").unwrap();
     for hashmap in networks {
