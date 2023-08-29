@@ -132,14 +132,31 @@ impl Handler {
         match response {
             Err(err) => DISPLAY.print_error(&format!("{:?}", err)),
             Ok(response) => {
-                if !response.status().is_success() {
+                let response_status = response.status();
+                let response_text = response.text().await.unwrap();
+
+                if !response_status.is_success() {
                     DISPLAY.print_error(&format!(
                         "The server returned with error {}",
-                        response.status()
-                    ))
+                        response_status
+                    ));
+
+                    let json_err: Result<serde_json::Value, serde_json::Error> =
+                        serde_json::from_str(&response_text);
+
+                    match json_err {
+                        Ok(value) => {
+                            DISPLAY.print_error(&format!(
+                                "Status: {} \n Message: {}",
+                                value["status"], value["message"]
+                            ));
+                            return None;
+                        }
+                        Err(_) => (), // Let the default error handling
+                    }
                 }
 
-                let json = response.json::<T>().await;
+                let json: Result<T, serde_json::Error> = serde_json::from_str(&response_text);
                 match json {
                     Err(_) => DISPLAY.print_error("The response is not a formatted json !"),
                     Ok(json) => return Some(json),
