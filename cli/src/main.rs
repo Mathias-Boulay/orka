@@ -14,9 +14,7 @@ mod display;
 mod handler;
 mod workloads;
 
-
 lazy_static! {
-    #[derive(Debug)]
     pub static ref APP_CONFIG: Arc<Mutex<Config>> = Config::new_wrapped();
     pub static ref DISPLAY: Display = Display {};
 }
