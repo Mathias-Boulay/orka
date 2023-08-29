@@ -2,7 +2,7 @@ use clap::Parser;
 use handler::Handler;
 use std::sync::{Arc, Mutex};
 use crate::{
-    args::{CommandType, OrkaCtlArgs},
+    args::{OrkaCtlArgs},
     config::Config,
     display::Display,
 };

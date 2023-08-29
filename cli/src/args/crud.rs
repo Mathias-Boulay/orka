@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-
+use serde::{Serialize};
 use clap::Parser;
 
 #[derive(Debug, Parser)]
@@ -24,7 +24,7 @@ pub struct CreateWorkload {
     pub file_path: PathBuf,
 }
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Serialize)]
 pub struct CreateInstance {
     /// The workload id
     pub workload_id: String,
