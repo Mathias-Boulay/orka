@@ -86,4 +86,8 @@ pub struct DeleteInstance {
     #[arg(long)]
     /// The instance id
     pub instance_id: String,
+
+    #[arg(short, long)]
+    /// Whether the instance is gracefully killed
+    pub force: bool,
 }
