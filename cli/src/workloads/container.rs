@@ -8,6 +8,8 @@ enum Registry {
     Ghcr,
     #[serde(rename(deserialize = "docker", serialize = "Docker"))]
     Docker,
+    #[serde(rename(deserialize = "podman", serialize = "Podman"))]
+    Podman,
 }
 
 // default registry

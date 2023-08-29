@@ -10,7 +10,6 @@ use crate::{
             CreateInstance, CreateWorkload, DeleteInstance, DeleteWorkload, GetInstance,
             GetWorkload,
         },
-        OrkaCtlArgs,
     },
     DISPLAY,
 };
@@ -78,23 +77,30 @@ impl Handler {
     }
 
     pub async fn create_instance(&self, args: CreateInstance) {
-        let res = self
-            .client
-            .post(Handler::get_url("instance"))
-            .body("")
-            .send()
-            .await;
+        let instance = serde_json::to_string(&args).unwrap();
+        match serde_json::from_str::<serde_json::Value>(&instance) {
+            Ok(json) => {
+                let res = self
+                    .client
+                    .post(Handler::get_url("instances"))
+                    .json(&json)
+                    .send()
+                    .await;
+    
+                let result = self
+                    .generic_response_handling::<serde_json::Value>(res)
+                    .await;
+                if result.is_some() {
+                    DISPLAY.print_log(&format!("{:?}", result.unwrap())); 
+                }
+            },
+            Err(_) => DISPLAY.print_error("Not a json object."),
+        };
 
-        let result = self
-            .generic_response_handling::<serde_json::Value>(res)
-            .await;
-        if result.is_some() {
-            DISPLAY.print_log(&format!("{:?}", result.unwrap()))
-        }
     }
 
     pub async fn get_workload(&self, args: GetWorkload) {
-        let mut url = Handler::get_url("workload");
+        let mut url = Handler::get_url("workloads");
         if args.workload_id.is_some() {
             url += &format!("/{}", &args.workload_id.unwrap());
         }
@@ -110,7 +116,7 @@ impl Handler {
     }
 
     pub async fn get_instance(&self, args: GetInstance) {
-        let mut url = Handler::get_url("instance");
+        let mut url = Handler::get_url("instances");
         if args.instance_id.is_some() {
             url += &format!("/{}", &args.instance_id.unwrap());
         }
@@ -126,7 +132,7 @@ impl Handler {
     }
 
     pub async fn delete_workload(&self, args: DeleteWorkload) {
-        let url = format!("{}/{}", Handler::get_url("workload"), args.workload_id);
+        let url = format!("{}/{}", Handler::get_url("workloads"), args.workload_id);
         let res = self.client.delete(url).send().await;
 
         let result = self
@@ -139,7 +145,7 @@ impl Handler {
     }
 
     pub async fn delete_instance(&self, args: DeleteInstance) {
-        let url = format!("{}/{}", Handler::get_url("instance"), args.instance_id);
+        let url = format!("{}/{}", Handler::get_url("instances"), args.instance_id);
         let res = self.client.delete(url).send().await;
 
         let result = self
