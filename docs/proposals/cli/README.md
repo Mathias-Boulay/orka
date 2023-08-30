@@ -67,6 +67,7 @@ As a CLI, our component interface will communicate to the ClusterAPI using the H
 - `GET /instance/:id` returns instances of id `:id`
 - `POST /instance` creates a new instance
 - `DELETE /instance/:id` deletes an existing instance of id `:id`
+- `DELETE /instance/:id/force` forcefully deletes an existing instance of id `:id`
 
 ## CLI
 
@@ -87,7 +88,7 @@ As a CLI, our component interface will communicate to the ClusterAPI using the H
 
 *Instance commands:*
 - `orkactl create instance <workload-id>`
-- `orkactl delete instance <instance-id>`
+- `orkactl delete instance <instance-id> [--force]`
 - `orkactl get instance [--id <instance-id>]`
 
 
@@ -164,6 +165,7 @@ The following `orkactl` properties can be set though the configuration file:
 | Property Key | Description                         | Optional | Default Value      |
 |--------------|-------------------------------------|----------|--------------------|
 | `apiUrl`     | The URL to the Cluster API instance | Yes      | `http://localhost` |
+| `apiPort`    | The port to the Cluster API instance| Yes      | `3000`             |
 
 
 ### Configuration File reference
@@ -171,4 +173,5 @@ The following `orkactl` properties can be set though the configuration file:
 The configuration file is stored as a structured yaml:
 ```yaml
 apiUrl: "string"
+apiPort: number
 ```
