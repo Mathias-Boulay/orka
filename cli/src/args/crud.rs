@@ -1,6 +1,6 @@
+use clap::{command, Parser};
+use serde::Serialize;
 use std::path::PathBuf;
-
-use clap::Parser;
 
 #[derive(Debug, Parser)]
 pub struct CreateType {
@@ -24,7 +24,7 @@ pub struct CreateWorkload {
     pub file_path: PathBuf,
 }
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Serialize)]
 pub struct CreateInstance {
     /// The workload id
     pub workload_id: String,
@@ -86,4 +86,8 @@ pub struct DeleteInstance {
     #[arg(long)]
     /// The instance id
     pub instance_id: String,
+
+    #[arg(short, long)]
+    /// Whether the instance is gracefully killed
+    pub force: bool,
 }

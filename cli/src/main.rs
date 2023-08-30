@@ -1,21 +1,17 @@
+use crate::{args::OrkaCtlArgs, config::Config, display::Display};
+use args::config::ConfigOverride;
 use clap::Parser;
 use handler::Handler;
-use std::sync::{Arc, Mutex};
-
-use crate::{
-    args::{CommandType, OrkaCtlArgs},
-    config::Config,
-    display::Display,
-};
 use lazy_static::lazy_static;
+use std::sync::{Arc, Mutex};
 
 mod args;
 mod config;
 mod display;
 mod handler;
+mod workloads;
 
 lazy_static! {
-    #[derive(Debug)]
     pub static ref APP_CONFIG: Arc<Mutex<Config>> = Config::new_wrapped();
     pub static ref DISPLAY: Display = Display {};
 }
@@ -24,12 +20,25 @@ lazy_static! {
 async fn main() {
     println!("Hello, cli!");
     let args = OrkaCtlArgs::parse();
-    println!("{:?}", args);
+    apply_config_overrides(&args.overrides);
     execute(args).await
 }
 
+/// Applies the pottential overrides on the global config object
+fn apply_config_overrides(overrides: &ConfigOverride) {
+    let mut config = Config::get_config_lock();
+    match overrides.api_fqdn.as_ref() {
+        Some(value) => config.set_orka_url(&value),
+        None => (),
+    }
+    match overrides.api_port {
+        Some(value) => config.set_orka_port(value),
+        None => (),
+    }
+}
+
 /// Call the proper handler function
-pub async fn execute(args: OrkaCtlArgs) {
+async fn execute(args: OrkaCtlArgs) {
     let handler = Handler::new();
     match args.command {
         crate::args::CommandType::Config(config_type) => match config_type.command {
@@ -56,5 +65,5 @@ pub async fn execute(args: OrkaCtlArgs) {
                 handler.delete_instance(instance).await
             }
         },
-    }
+    };
 }
