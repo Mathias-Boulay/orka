@@ -126,7 +126,10 @@ impl Handler {
     }
 
     pub async fn delete_instance(&self, args: DeleteInstance) {
-        let url = format!("{}/{}", Handler::get_url("instances"), args.instance_id);
+        let mut url = format!("{}/{}", Handler::get_url("instances"), args.instance_id);
+        if args.force {
+            url = url + "/force"
+        } 
         let res = self.client.delete(url).send().await;
 
         let _ = self
