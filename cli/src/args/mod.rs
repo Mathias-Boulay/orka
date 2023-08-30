@@ -1,7 +1,7 @@
 use clap::{command, Parser, Subcommand};
 
 use self::{
-    config::ConfigType,
+    config::{ConfigOverride, ConfigResource, ConfigType},
     crud::{CreateType, DeleteType, GetType},
 };
 
@@ -14,6 +14,9 @@ pub mod crud;
 pub struct OrkaCtlArgs {
     #[clap(subcommand, name = "config")]
     pub command: CommandType,
+
+    #[clap(flatten)]
+    pub overrides: ConfigOverride,
 }
 
 #[derive(Debug, Subcommand)]

@@ -1,6 +1,6 @@
+use clap::{command, Parser};
+use serde::Serialize;
 use std::path::PathBuf;
-use serde::{Serialize};
-use clap::Parser;
 
 #[derive(Debug, Parser)]
 pub struct CreateType {
